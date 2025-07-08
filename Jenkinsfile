@@ -6,7 +6,7 @@ pipeline{
 	stages{
 		stage("Installign dep"){
 			steps{
-				sh '''
+				bat '''
 					node -v
 					npm -v
 				'''
