@@ -7,8 +7,7 @@ pipeline{
 		stage("Installign dep"){
 			steps{
 				bat '''
-					node -v
-					npm -v
+					npm install --no-audit
 				'''
 			}
 		}
