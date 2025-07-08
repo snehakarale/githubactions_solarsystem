@@ -11,6 +11,14 @@ pipeline{
 				'''
 			}
 		}
+		stage("Npm depedency audit"){
+			steps{
+				bat '''
+					npm audit --audit-level=critical
+					echo $?
+				'''
+			}
+		}
 	}
 
 }
