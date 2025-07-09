@@ -3,6 +3,9 @@ pipeline{
 	tools {
 		nodejs 'nodejs-24-3-0'
 	}
+	environment {
+		MONGO_URI = "mongodb://172.28.254.224:27017/?authSource=admin"
+	}
 	stages{
 		stage("Installign dep"){
 			steps{
@@ -37,9 +40,13 @@ pipeline{
 		}
 		stage("Unit Testing"){
 			steps {
-				bat '''
-					npm test
-				'''
+				withCredentials([usernamePassword(credentialsId: 'mongodb-user-pass', passwordVariable: 'MONGO_PASSWORD', usernameVariable: 'MONGO_USERNAME')]) {
+					bat '''
+						npm test
+					'''
+					junit allowEmptyResults: true, stdioRetention: '' , testResults: 'test-results.xml'
+
+                }
 			}
 		}
 	}
