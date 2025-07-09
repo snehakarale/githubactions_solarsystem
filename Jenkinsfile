@@ -35,6 +35,13 @@ pipeline{
 				}
 			}
 		}
+		stage("Unit Testing"){
+			steps {
+				bat '''
+					npm test
+				'''
+			}
+		}
 	}
 
 }
