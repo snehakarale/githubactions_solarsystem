@@ -26,4 +26,4 @@ spec:
           protocol: TCP
         envFrom:
         - secretRef:
-            name: mongo-db-creds
+            name: ${{secret.}}

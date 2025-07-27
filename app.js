@@ -11,9 +11,9 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '/')));
 app.use(cors())
 
-mongoose.connect(process.env.MONGO_URI, {
-    user: process.env.MONGO_USERNAME,
-    pass: process.env.MONGO_PASSWORD,
+mongoose.connect('mongodb+srv://yagen1111:REY9u59pG50bVTuq@cluster0.uw8v3gr.mongodb.net/superData', {
+    user: 'yagen1111',
+    pass: 'REY9u59pG50bVTuq',
     useNewUrlParser: true,
     useUnifiedTopology: true
 }, function(err) {
@@ -38,19 +38,23 @@ var planetModel = mongoose.model('planets', dataSchema);
 
 
 
-app.post('/planet',   function(req, res) {
-   // console.log("Received Planet ID " + req.body.id)
+app.post('/planet', function(req, res) {
+    console.log("Received Planet ID:", req.body.id);
     planetModel.findOne({
-        id: req.body.id
+        id: Number(req.body.id)
     }, function(err, planetData) {
         if (err) {
-            alert("Ooops, We only have 9 planets and a sun. Select a number from 0 - 9")
-            res.send("Error in Planet Data")
+            console.log("Ooops, We only have 9 planets and a sun. Select a number from 0 - 9");
+            res.send("Error in Planet Data");
+        } else if (!planetData) {
+            console.log("No planet found for ID:", req.body.id);
+            res.send({ message: "Planet not found" });
         } else {
+            console.log("Planet data found:", planetData);
             res.send(planetData);
         }
-    })
-})
+    });
+});
 
 app.get('/',   async (req, res) => {
     res.sendFile(path.join(__dirname, '/', 'index.html'));
