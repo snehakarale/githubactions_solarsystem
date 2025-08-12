@@ -5,6 +5,12 @@ on:
       - main
       - 'feature/*'
 
+env:
+  MONGO_URI: 'mongodb+srv://snehakarale2:${{ secrets.MONGO_PASSWORD }}@cluster0.hppacpg.mongodb.net/'
+  MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
+  MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+
+
 jobs:
   unit-testing:
     name: Unit Testing
@@ -205,7 +211,17 @@ jobs:
 
         - name: Verify replaced manifests
           run: cat kubernetes/development/*.yaml
-        
-        # - name: Deploy to Dev k8s cluster
-        #   run: |
-        #      kubectl apply -f kubernetes/development 
+
+        - name: Create MongoDB Secret
+          run: |
+              kubectl -n ${{ vars.NAMESPACE }} create secret generic mongo-db-creds \
+                --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
+                --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \
+                --from-literal=MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+                --save-config \
+                --dry-run=client \
+                -o yaml | kubectl apply -f -
+
+        - name: Deploy to Dev k8s cluster
+          run: |
+                kubectl apply -f kubernetes/development 
