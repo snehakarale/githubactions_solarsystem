@@ -29,7 +29,7 @@ jobs:
         - name: Archive Test Result
           uses: actions/upload-artifact@v4
           with:
-            name: Unit Testing Result
+            name: ${{ runner.os }}-Unit Testing Result
             path: test-results.xml
 
     code-coverage:
@@ -74,3 +74,48 @@ jobs:
           with:
             name: Code Coverage Result
             path: test-results.xml
+    
+    docker:      
+        name: Containerization
+        needs: [unit-testing, code-coverage]
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout Repository
+            uses: actions/checkout@v4
+
+
+          - name: Log in to Docker Hub
+            uses: docker/login-action@v2.2.0
+            with:
+              username: ${{ vars.DOCKERHUB_USERNAME }}
+              password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+          - name: Build Docker Image for Testing
+            uses: docker/build-push-action@v5
+            with:
+              context: .
+              load: true
+              push: false
+              tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+
+
+          - name: Run Container and Test `/live` Endpoint
+            run: |
+              docker run --rm --name solar-system-app -d \
+                -p 3000:3000 \
+                -e MONGO_URI=$MONGO_URI \
+                -e MONGO_USERNAME=$MONGO_USERNAME \
+                -e MONGO_PASSWORD=$MONGO_PASSWORD \
+                ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
+
+
+              echo "Verifying /live endpoint"
+              wget -q -O - http://127.0.0.1:3000/live | grep live
+          
+
+          - name: Docker Build and Push
+            uses: docker/build-push-action@v4
+            with:
+              context: .
+              push: true
+              tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
