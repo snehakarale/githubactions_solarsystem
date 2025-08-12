@@ -193,8 +193,8 @@ jobs:
         - name: Replace tokens in manifests
           uses: cschleiden/replace-tokens@v1
           with:
-            tokenPrefix: '{_'
-            tokenSuffix: '_}'
+            tokenPrefix: '_{_'
+            tokenSuffix: '_}_'
             files: kubernetes/development/*.yaml
           env:
             NAMESPACE: ${{ vars.NAMESPACE }}
@@ -205,6 +205,6 @@ jobs:
         - name: Verify replaced manifests
           run: cat kubernetes/development/*.yaml
         
-        - name: Deploy to Dev k8s cluster
-          run: |
-             kubectl apply -f kubernetes/development 
+        # - name: Deploy to Dev k8s cluster
+        #   run: |
+        #      kubectl apply -f kubernetes/development 
