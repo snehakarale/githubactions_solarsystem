@@ -11,11 +11,11 @@ jobs:
     runs-on: ${{ matrix.operating_system }}
     strategy:
       matrix:
-        nodejs_version: [18, 20]
+        nodejs_version: [20]
         operating_system: [ubuntu-latest]
-        exclude:
-          - nodejs_version: 18
-            operating_system: macos-latest
+        # exclude:
+        #   - nodejs_version: 18
+        #     operating_system: macos-latest
 
 
     services:
@@ -204,3 +204,7 @@ jobs:
 
         - name: Verify replaced manifests
           run: cat kubernetes/development/*.yaml
+        
+        - name: Deploy to Dev k8s cluster
+          run: |
+             kubectl apply -f kubernetes/development 
