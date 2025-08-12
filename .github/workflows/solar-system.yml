@@ -167,20 +167,19 @@ jobs:
                 push: true
                 tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
       
-  # dev-deploy:
-  #   needs: docker-push-image
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Repo
-  #       uses: actions/checkout@v4
+  dev-deploy:
+      needs: docker-push-image
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repo
+          uses: actions/checkout@v3
 
-  #     - name: Install kubectl CLI
-  #       uses: azure/setup-kubectl@v3
-  #       with:
-  #         version: '1.26.0'
+        - name: Set up Kubernetes cluster with KinD
+          uses: engineerd/setup-kind@v0.5.0
+          with:
+            version: v0.20.0  # use the latest KinD version
 
-  #     - name: Fetch Kubernetes Cluster Details
-  #       run: |
-  #         kubectl version --short
-  #         echo "------------------------------------------"
-  #         kubectl get nodes
+        - name: Confirm Kubernetes is running
+          run: |
+            kubectl get nodes
+            kubectl cluster-info
