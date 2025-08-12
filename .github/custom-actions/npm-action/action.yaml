@@ -10,7 +10,7 @@ runs:
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: ${{ inputs.cache-folder }}
+        path: ${{ inputs.path-of-folder }}
         key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
 
     - name: Install dependencies
