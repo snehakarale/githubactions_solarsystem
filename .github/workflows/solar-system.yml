@@ -180,16 +180,35 @@ jobs:
         - name: Checkout repo
           uses: actions/checkout@v3
 
-        - name: Set up Kubernetes cluster with KinD
-          uses: engineerd/setup-kind@v0.5.0
-          with:
-            version: v0.20.0  # use the latest KinD version
-
-        - name: Confirm Kubernetes is running
+        - name: Install KinD
           run: |
-            kubectl get nodes
-            kubectl cluster-info
-            
+            curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+            chmod +x ./kind
+            sudo mv ./kind /usr/local/bin/kind
+
+        - name: Create KinD Cluster with Ingress Ports
+          run: |
+            cat <<EOF > kind-config.yaml
+            kind: Cluster
+            apiVersion: kind.x-k8s.io/v1alpha4
+            nodes:
+              - role: control-plane
+                extraPortMappings:
+                  - containerPort: 80
+                    hostPort: 80
+                    protocol: TCP
+                  - containerPort: 443
+                    hostPort: 443
+                    protocol: TCP
+            EOF
+
+            kind create cluster --config kind-config.yaml
+
+                - name: Confirm Kubernetes is running
+                  run: |
+                    kubectl get nodes
+                    kubectl cluster-info
+
         - name: Deploy NGINX Ingress Controller
           run: |
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/kind/deploy.yaml
