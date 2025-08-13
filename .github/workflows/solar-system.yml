@@ -211,11 +211,24 @@ jobs:
 
         - name: Deploy NGINX Ingress Controller
           run: |
-            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/kind/deploy.yaml
-            kubectl wait --namespace ingress-nginx \
-              --for=condition=Ready pod \
-              --selector=app.kubernetes.io/component=controller \
-              --timeout=120s
+                kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/kind/deploy.yaml
+
+                # Wait a bit for pods to start showing up
+                echo "Waiting for ingress controller pod to appear..."
+                for i in {1..30}; do
+                  POD_COUNT=$(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller --no-headers 2>/dev/null | wc -l)
+                  if [ "$POD_COUNT" -gt 0 ]; then
+                    echo "Ingress controller pod(s) found."
+                    break
+                  fi
+                  echo "Waiting for ingress controller pod..."
+                  sleep 5
+                done
+
+                kubectl wait --namespace ingress-nginx \
+                  --for=condition=Ready pod \
+                  --selector=app.kubernetes.io/component=controller \
+                  --timeout=120s
 
         - name: Save Nginx Ingress IP
           id: ingress
