@@ -244,14 +244,16 @@ jobs:
           run: |
             kubectl -n ${{ vars.NAMESPACE }} rollout status deployment/solar-system --timeout=120s
         
-        - name: Test deployed app
+        - name: Test deployed app with port-forward
           run: |
-            echo "Testing service on http://localhost:30080"
-            curl --retry 10 --retry-delay 5 http://localhost:30080
-          
+                echo "Port forwarding service and testing /live endpoint"
+                kubectl -n development port-forward svc/solar-system 8080:80 &
+                sleep 5
+                curl --retry 10 --retry-delay 5 http://localhost:8080/live
+                
         - name: Dump Kubernetes resources on failure
           if: failure()
           run: |
             kubectl -n ${{ vars.NAMESPACE }} get all
             kubectl -n ${{ vars.NAMESPACE }} describe pods
-            kubectl -n ${{ vars.NAMESPACE }} logs deployment/solar-system-deployment
+            kubectl -n ${{ vars.NAMESPACE }} logs deployment/solar-system
