@@ -239,8 +239,19 @@ jobs:
         - name: Deploy to Dev k8s cluster
           run: |
                 kubectl apply -f kubernetes/development 
+
+        - name: Wait for Deployment to become ready
+          run: |
+            kubectl -n ${{ vars.NAMESPACE }} rollout status deployment/solar-system --timeout=120s
         
         - name: Test deployed app
           run: |
             echo "Testing service on http://localhost:30080"
             curl --retry 10 --retry-delay 5 http://localhost:30080
+          
+        - name: Dump Kubernetes resources on failure
+          if: failure()
+          run: |
+            kubectl -n ${{ vars.NAMESPACE }} get all
+            kubectl -n ${{ vars.NAMESPACE }} describe pods
+            kubectl -n ${{ vars.NAMESPACE }} logs deployment/solar-system-deployment
