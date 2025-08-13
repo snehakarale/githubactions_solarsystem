@@ -186,7 +186,7 @@ jobs:
             chmod +x ./kind
             sudo mv ./kind /usr/local/bin/kind
 
-        - name: Create KinD Cluster with Ingress Ports
+        - name: Create KinD Cluster
           run: |
             cat <<EOF > kind-config.yaml
             kind: Cluster
@@ -194,11 +194,8 @@ jobs:
             nodes:
               - role: control-plane
                 extraPortMappings:
-                  - containerPort: 80
-                    hostPort: 80
-                    protocol: TCP
-                  - containerPort: 443
-                    hostPort: 443
+                  - containerPort: 30080
+                    hostPort: 30080
                     protocol: TCP
             EOF
 
@@ -209,33 +206,7 @@ jobs:
                 kubectl get nodes
                 kubectl cluster-info
 
-        - name: Deploy NGINX Ingress Controller
-          run: |
-                kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/kind/deploy.yaml
-
-                # Wait a bit for pods to start showing up
-                echo "Waiting for ingress controller pod to appear..."
-                for i in {1..30}; do
-                  POD_COUNT=$(kubectl get pods -n ingress-nginx -l app.kubernetes.io/component=controller --no-headers 2>/dev/null | wc -l)
-                  if [ "$POD_COUNT" -gt 0 ]; then
-                    echo "Ingress controller pod(s) found."
-                    break
-                  fi
-                  echo "Waiting for ingress controller pod..."
-                  sleep 5
-                done
-
-                kubectl wait --namespace ingress-nginx \
-                  --for=condition=Ready pod \
-                  --selector=app.kubernetes.io/component=controller \
-                  --timeout=120s
-
-        - name: Save Nginx Ingress IP
-          id: ingress
-          run: |
-            echo "INGRESS_IP=$(kubectl get svc ingress-nginx-controller --all-namespaces\
-              -o jsonpath='{.status.loadBalancer.ingress[0].ip}')" >> $GITHUB_ENV
-
+      
         - name: Replace tokens in manifests
           uses: cschleiden/replace-tokens@v1
           continue-on-error: true
@@ -247,7 +218,7 @@ jobs:
             NAMESPACE: ${{ vars.NAMESPACE }}
             REPLICAS: ${{ vars.REPLICAS }}
             IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
-            INGRESS_IP: ${{ env.INGRESS_IP }}
+            #INGRESS_IP: ${{ env.INGRESS_IP }}
 
         - name: Verify replaced manifests
           run: cat kubernetes/development/*.yaml
@@ -266,3 +237,8 @@ jobs:
         - name: Deploy to Dev k8s cluster
           run: |
                 kubectl apply -f kubernetes/development 
+        
+        - name: Test deployed app
+          run: |
+            echo "Testing service on http://localhost:30080"
+            curl --retry 10 --retry-delay 5 http://localhost:30080
