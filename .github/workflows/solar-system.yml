@@ -204,10 +204,10 @@ jobs:
 
             kind create cluster --config kind-config.yaml
 
-                - name: Confirm Kubernetes is running
-                  run: |
-                    kubectl get nodes
-                    kubectl cluster-info
+        - name: Confirm Kubernetes is running
+          run: |
+                kubectl get nodes
+                kubectl cluster-info
 
         - name: Deploy NGINX Ingress Controller
           run: |
