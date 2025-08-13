@@ -242,7 +242,7 @@ jobs:
 
         - name: Wait for Deployment to become ready
           run: |
-            kubectl -n ${{ vars.NAMESPACE }} rollout status deployment/solar-system --timeout=120s
+            kubectl -n ${{ vars.NAMESPACE }} rollout status deployment/solar-system --timeout=150s
         
         - name: Test deployed app with port-forward
           run: |
