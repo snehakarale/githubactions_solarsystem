@@ -115,8 +115,8 @@ jobs:
               password: ${{ secrets.DOCKERHUB_TOKEN }}
 
 
-          - name: Set up QEMU emulator
-            uses: docker/setup-qemu-action@v3
+          # - name: Set up QEMU emulator
+          #   uses: docker/setup-qemu-action@v3
 
 
           - name: Set up Docker Buildx
