@@ -150,6 +150,8 @@ jobs:
   dev-deploy:
       needs: docker-push-image
       runs-on: ubuntu-latest
+      outputs:
+        APP_URL: ${{ steps.set-host-address.outputs.APP_URL }}
       steps:
         - name: Checkout repo
           uses: actions/checkout@v3
@@ -203,11 +205,11 @@ jobs:
           run: |
             kubectl -n ${{ vars.NAMESPACE }} rollout status deployment/solar-system --timeout=150s
 
-        - name: Test the app
+        - name: Set App Ingress Host URL
+          id: set-host-address
           run: |
             URL=$(minikube service solar-system --namespace ${{ vars.NAMESPACE }} --url)
-            echo "Testing URL: $URL"
-            curl --retry 5 --retry-delay 3 "$URL/live"
+            echo "APP_URL=$URL" >> "$GITHUB_OUTPUT"         
 
 
         - name: Dump Kubernetes resources on failure
@@ -216,3 +218,16 @@ jobs:
             kubectl -n ${{ vars.NAMESPACE }} get all
             kubectl -n ${{ vars.NAMESPACE }} describe pods
             kubectl -n ${{ vars.NAMESPACE }} logs deployment/solar-system
+
+
+  integration-testing:
+      name: Dev Integration Testing
+      needs: dev-deploy
+      runs-on: ubuntu-latest
+      steps:
+        - name: Test `/live` Endpoint
+          env:
+            URL: ${{ needs.dev-deploy.outputs.APP_URL }}
+          run: |
+            echo "Testing URL: $URL"
+            curl --retry 5 --retry-delay 3 "$URL/live"
