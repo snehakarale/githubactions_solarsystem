@@ -5,18 +5,19 @@ on:
       - main
       - 'feature/*'
 
-# env:
-#   #MONGO_URI: 'mongodb+srv://snehakarale2:${{ secrets.MONGO_PASSWORD }}@cluster0.hppacpg.mongodb.net/'
-#   MONGO_URI: mongodb+srv://snehakarale2:${{ secrets.MONGO_PASSWORD }}@cluster0.hppacpg.mongodb.net/planets?retryWrites=true&w=majority
-
-#   MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
-#   MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-
-
 jobs:
   unit-testing:
     name: Unit Testing
     runs-on: ${{ matrix.operating_system }}
+    services:                                  # service continer
+      mongo-db:
+        image: siddharth67/mongo-db:non-prod   #non-prod mongo db use for testing
+        ports:
+          - 27017:27017
+    env:
+         MONGO_URI: 'mongodb://localhost:27017/superData'
+         MONGO_USERNAME: non-prod-user
+         MONGO_PASSWORD: non-prod-password
     strategy:
       matrix:
         nodejs_version: [20]
@@ -24,21 +25,6 @@ jobs:
         # exclude:
         #   - nodejs_version: 18
         #     operating_system: macos-latest
-
-
-    services:
-      mongo-db:
-        image: siddharth67/mongo-db:non-prod
-        ports:
-          - 27017:27017
-
-
-    env:
-        MONGO_URI: 'mongodb://localhost:27017/superData'
-        MONGO_USERNAME: non-prod-user
-        MONGO_PASSWORD: non-prod-password
-
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -65,12 +51,13 @@ jobs:
           name: ${{ runner.os }}-${{ matrix.nodejs_version }}-Mocha-Test-Result
           path: test-results.xml
 
+
   code-coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
-    container:
+    container:                         # Job Container
       image: node:18
-    services:
+    services:                          # Service Container
       mongo:
         image: siddharth67/mongo-db:non-prod
         options: --name mongo
@@ -79,11 +66,9 @@ jobs:
       MONGO_USERNAME: non-prod-user
       MONGO_PASSWORD: non-prod-password
 
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
 
       - name: Custom Action - Cache & Install NPM Packages
         uses: ./.github/custom-actions/npm-action
@@ -102,7 +87,7 @@ jobs:
           retention-days: 5
 
   docker-build-test:
-        name: Containerization1
+        name: Containerization
         needs: [unit-testing, code-coverage]
         runs-on: ubuntu-latest
         steps:
@@ -116,14 +101,8 @@ jobs:
               username: ${{ vars.DOCKERHUB_USERNAME }}
               password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-
-          # - name: Set up QEMU emulator
-          #   uses: docker/setup-qemu-action@v3
-
-
           - name: Set up Docker Buildx
             uses: docker/setup-buildx-action@v3
-
 
           - name: Build Docker Image for Testing
             uses: docker/build-push-action@v5
@@ -132,7 +111,6 @@ jobs:
               load: true
               push: false
               tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
-
 
           - name: Run Container and Test `/live` Endpoint
             run: |
@@ -143,30 +121,24 @@ jobs:
                 -e MONGO_PASSWORD=$MONGO_PASSWORD \
                 ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
 
-
               echo "Verifying /live endpoint"
               wget -q -O - http://127.0.0.1:3000/live | grep live
   
   docker-push-image:
           needs: docker-build-test
-          runs-on: ubuntu-latest
-
-      
+          runs-on: ubuntu-latest      
           steps:
             - name: Checkout code
               uses: actions/checkout@v4
 
-
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v2
-
 
             - name: Log in to Docker Hub
               uses: docker/login-action@v2
               with:
                 username: ${{ vars.DOCKERHUB_USERNAME }}
                 password: ${{ secrets.DOCKERHUB_TOKEN }}
-
 
             - name: Docker Build and Push
               uses: docker/build-push-action@v4
@@ -188,7 +160,7 @@ jobs:
             chmod +x ./kind
             sudo mv ./kind /usr/local/bin/kind
 
-        - name: Create KinD Cluster
+        - name: Create KinD Cluster with port 80 exposed
           run: |
             cat <<EOF > kind-config.yaml
             kind: Cluster
@@ -196,8 +168,8 @@ jobs:
             nodes:
               - role: control-plane
                 extraPortMappings:
-                  - containerPort: 30080
-                    hostPort: 30080
+                  - containerPort: 80
+                    hostPort: 80
                     protocol: TCP
             EOF
 
@@ -205,10 +177,17 @@ jobs:
 
         - name: Confirm Kubernetes is running
           run: |
-                kubectl get nodes
-                kubectl cluster-info
+            kubectl get nodes
+            kubectl cluster-info
 
-      
+        - name: Install Ingress NGINX Controller
+          run: |
+            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/kind/deploy.yaml
+            kubectl wait --namespace ingress-nginx \
+              --for=condition=Ready pod \
+              --selector=app.kubernetes.io/component=controller \
+              --timeout=120s
+
         - name: Replace tokens in manifests
           uses: cschleiden/replace-tokens@v1
           continue-on-error: true
@@ -220,7 +199,7 @@ jobs:
             NAMESPACE: ${{ vars.NAMESPACE }}
             REPLICAS: ${{ vars.REPLICAS }}
             IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
-            #INGRESS_IP: ${{ env.INGRESS_IP }}
+            INGRESS_IP: 127.0.0.1
 
         - name: Verify replaced manifests
           run: cat kubernetes/development/*.yaml
@@ -243,14 +222,14 @@ jobs:
         - name: Wait for Deployment to become ready
           run: |
             kubectl -n ${{ vars.NAMESPACE }} rollout status deployment/solar-system --timeout=150s
-        
-        - name: Test deployed app with port-forward
+
+        - name: Test deployed app via Ingress
           run: |
-                echo "Port forwarding service and testing /live endpoint"
-                kubectl -n development port-forward svc/solar-system 8080:80 &
-                sleep 5
-                curl --retry 10 --retry-delay 5 http://localhost:8080/live
-                
+            echo "Testing /live endpoint via Ingress"
+            curl --retry 5 --retry-delay 3 \
+              -H "Host: solar-system-${{ vars.NAMESPACE }}.127.0.0.1.nip.io" \
+              http://localhost/live
+
         - name: Dump Kubernetes resources on failure
           if: failure()
           run: |

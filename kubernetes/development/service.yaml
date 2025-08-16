@@ -20,11 +20,10 @@ metadata:
   name: solar-system
   namespace: _{_NAMESPACE_}_
 spec:
-  type: NodePort
+  type: ClusterIP   # <-- Changed from NodePort
   ports:
-  - port: 80
-    targetPort: 3000
-    nodePort: 30080  # <-- Access via localhost:30080
-    protocol: TCP
+    - port: 80          # Ingress will route to this port
+      targetPort: 3000  # Your app listens on port 3000
+      protocol: TCP
   selector:
-     app: solar-system 
+    app: solar-system
