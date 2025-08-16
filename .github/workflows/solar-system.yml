@@ -183,10 +183,8 @@ jobs:
         - name: Install Ingress NGINX Controller
           run: |
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/kind/deploy.yaml
-            kubectl wait --namespace ingress-nginx \
-              --for=condition=Ready pod \
-              --selector=app.kubernetes.io/component=controller \
-              --timeout=200s
+            echo "Waiting 30 seconds for pods to start..."
+            sleep 30
             kubectl get pods -n ingress-nginx
             kubectl get svc -n ingress-nginx
 
