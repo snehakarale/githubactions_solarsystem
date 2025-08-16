@@ -186,7 +186,10 @@ jobs:
             kubectl wait --namespace ingress-nginx \
               --for=condition=Ready pod \
               --selector=app.kubernetes.io/component=controller \
-              --timeout=120s
+              --timeout=200s
+            kubectl get pods -n ingress-nginx
+            kubectl get svc -n ingress-nginx
+
 
         - name: Replace tokens in manifests
           uses: cschleiden/replace-tokens@v1
