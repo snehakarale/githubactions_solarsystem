@@ -188,7 +188,7 @@ jobs:
             IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}
             INGRESS_IP: 127.0.0.1
 
-        - name: Verify replaced manifests
+        - name: Verify replaced manifest
           run: cat kubernetes/development/*.yaml
 
         - name: Create MongoDB Secret
