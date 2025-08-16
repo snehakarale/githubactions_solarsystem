@@ -150,9 +150,9 @@ jobs:
   dev-deploy:
       needs: docker-push-image
       runs-on: ubuntu-latest
-      environment:
-        name: development
-        url: ${{ steps.get-url.outputs.URL }}/live
+      #environment:
+        #name: development
+        #url: ${{ steps.get-url.outputs.URL }}/live
 
 
       outputs:
