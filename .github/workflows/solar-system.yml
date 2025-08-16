@@ -150,8 +150,13 @@ jobs:
   dev-deploy:
       needs: docker-push-image
       runs-on: ubuntu-latest
+      environment:
+        name: development
+        url: ${{ steps.get-url.outputs.URL }}/live
+
+
       outputs:
-        APP_URL: ${{ steps.set-host-address.outputs.APP_URL }}
+        APP_URL: ${{ steps.get-url.outputs.URL }}
       steps:
         - name: Checkout repo
           uses: actions/checkout@v3
@@ -205,12 +210,16 @@ jobs:
           run: |
             kubectl -n ${{ vars.NAMESPACE }} rollout status deployment/solar-system --timeout=150s
 
-        - name: Set App Ingress Host URL
-          id: set-host-address
+        - name: Get App URL
+          id: get-url
           run: |
             URL=$(minikube service solar-system --namespace ${{ vars.NAMESPACE }} --url)
-            echo "APP_URL=$URL" >> "$GITHUB_OUTPUT"         
+            echo "URL=$URL" >> $GITHUB_ENV
 
+        - name: Integration Test `/live`
+          run: |
+            echo "Testing $URL/live"
+            curl --retry 5 --retry-delay 3 "$URL/live"    
 
         - name: Dump Kubernetes resources on failure
           if: failure()
@@ -220,14 +229,14 @@ jobs:
             kubectl -n ${{ vars.NAMESPACE }} logs deployment/solar-system
 
 
-  integration-testing:
-      name: Dev Integration Testing
-      needs: dev-deploy
-      runs-on: ubuntu-latest
-      steps:
-        - name: Test `/live` Endpoint
-          env:
-            URL: ${{ needs.dev-deploy.outputs.APP_URL }}
-          run: |
-            echo "Testing URL: $URL"
-            curl --retry 5 --retry-delay 3 "$URL/live"
+  # integration-testing:
+  #     name: Dev Integration Testing
+  #     needs: dev-deploy
+  #     runs-on: ubuntu-latest
+  #     steps:
+  #       - name: Test `/live` Endpoint
+  #         env:
+  #           URL: ${{ needs.dev-deploy.outputs.APP_URL }}
+  #         run: |
+  #           echo "Testing URL: $URL"
+  #           curl --retry 5 --retry-delay 3 "$URL/live"
