@@ -69,9 +69,9 @@ jobs:
           run: |
               kubectl create namespace ${{ vars.NAMESPACE }}
               kubectl -n ${{ vars.NAMESPACE }} create secret generic mongo-db-creds \
-                --from-literal=MONGO_URI=${{ inputs.mongodb-uri }} \
-                --from-literal=MONGO_USERNAME=${{ inputs.mongodb_username }} \
-                --from-literal=MONGO_PASSWORD=${{ secrets.mongodb_password }} \
+                --from-literal=MONGO_URI="${{ inputs.mongodb-uri }}" \
+                --from-literal=MONGO_USERNAME="${{ inputs.mongodb_username }}" \
+                --from-literal=MONGO_PASSWORD="${{ secrets.mongodb_password }}" \
                 --save-config \
                 --dry-run=client \
                 -o yaml | kubectl apply -f -
