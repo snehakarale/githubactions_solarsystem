@@ -9,7 +9,7 @@ on:
       mongodb-uri:
         required: true
         type: string
-      mongodb-username:
+      mongodb_username:
         required: true
         type: string
       k8s-manifest-dir:
@@ -70,7 +70,7 @@ jobs:
               kubectl create namespace ${{ vars.NAMESPACE }}
               kubectl -n ${{ vars.NAMESPACE }} create secret generic mongo-db-creds \
                 --from-literal=MONGO_URI=${{ inputs.mongodb-uri }} \
-                --from-literal=MONGO_USERNAME=${{ inputs.mongodb-username }} \
+                --from-literal=MONGO_USERNAME=${{ inputs.mongodb_username }} \
                 --from-literal=MONGO_PASSWORD=${{ secrets.mongodb_password }} \
                 --save-config \
                 --dry-run=client \
