@@ -1,5 +1,9 @@
-on:
-  #workflow_dispatch:
+
+name: CI
+
+on: 
+ 
+
   push:
     branches:
       - main
@@ -179,6 +183,7 @@ jobs:
           uses: cschleiden/replace-tokens@v1
           continue-on-error: true
           with:
+
             tokenPrefix: '_{_'
             tokenSuffix: '_}_'
             files: kubernetes/development/*.yaml
@@ -297,7 +302,7 @@ jobs:
                 --dry-run=client \
                 -o yaml | kubectl apply -f -
 
-        - name: Deploy to Dev k8s cluster
+        - name: Deploy to Prod k8s cluster
           run: |
                 kubectl apply -f kubernetes/production 
 
