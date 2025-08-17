@@ -154,7 +154,7 @@ jobs:
       needs: docker-push-image
       uses: ./.github/workflows/reuseable-workflow.yml
       secrets:
-        mongodb-password: ${{ secrets.MONGO_PASSWORD}}
+        mongodb_password: ${{ secrets.MONGO_PASSWORD}}
       with:
         mongodb-uri : ${{ vars.MONGO_URI }}
         environment: development
