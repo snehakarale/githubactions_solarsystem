@@ -90,7 +90,7 @@ jobs:
             URL=$(minikube service solar-system --namespace ${{ vars.NAMESPACE }} --url)
             echo "URL=$URL" >> $GITHUB_ENV
 
-        - name: Integration Test /live
+        - name: Integration Test /live 
           run: |
             echo "Testing $URL/live"
             curl --retry 5 --retry-delay 3 "$URL/live"    
