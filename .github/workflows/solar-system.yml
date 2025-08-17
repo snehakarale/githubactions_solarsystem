@@ -159,6 +159,7 @@ jobs:
         mongodb-uri : ${{ vars.MONGO_URI }}
         environment: development
         k8s-manifest-dir: kubernetes/development/
+        mongo-username: ${{ vars.MONGO_USERNAME }}
 
   # integration-testing:
   #     name: Dev Integration Testing
