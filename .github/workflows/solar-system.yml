@@ -285,3 +285,26 @@ jobs:
       - name: Upload to AWS S3
         # TODO: Replace with official AWS S3 upload action or AWS CLI
         run: echo "Uploading reports to S3..."
+
+
+  slack-notification:
+    if: always()
+    name: Slack Notification
+    needs: [dev-deploy-and-testing, prod-deploy-and-testing]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Send Slack notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: learn-githubactions
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_ICON: https://gitlab.com/sidd-harth/solar-system/-/raw/main/images/saturn.png
+          SLACK_MESSAGE: ":hammer_and_wrench: Triggered by ${{ github.actor }}"
+          SLACK_TITLE: "Pipeline Status"
