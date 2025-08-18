@@ -78,7 +78,7 @@ jobs:
 
         - name: Deploy to ${{ inputs.environment }} k8s cluster
           run: |
-                kubectl apply -f ${{ inputs.k8s-manifest-dir }}*.yaml
+                kubectl apply -f ${{ inputs.k8s-manifest-dir }}
 
         - name: Wait for Deployment to become ready
           run: |
